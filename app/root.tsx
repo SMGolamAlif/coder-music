@@ -11,8 +11,10 @@ import type { LinksFunction } from "@remix-run/node";
 import "./tailwind.css";
 import "./styles/theme.css";
 import { PlayerProvider } from "./context/PlayerContext";
+import { ApiKeyProvider } from "./context/ApiKeyContext";
 import Sidebar from "./components/Sidebar";
 import Player from "./components/Player";
+import ApiKeyModal from "./components/ApiKeyModal";
 import { usePlayer } from "./context/PlayerContext";
 
 export const links: LinksFunction = () => [
@@ -65,8 +67,11 @@ function AppLayout() {
 
 export default function App() {
   return (
-    <PlayerProvider>
-      <AppLayout />
-    </PlayerProvider>
+    <ApiKeyProvider>
+      <PlayerProvider>
+        <AppLayout />
+        <ApiKeyModal />
+      </PlayerProvider>
+    </ApiKeyProvider>
   );
 }

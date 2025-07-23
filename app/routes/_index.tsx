@@ -1,9 +1,10 @@
 import { json, type MetaFunction, type LoaderFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { searchYouTubeVideos, getPlaylistVideos, CODING_QUERIES, type YouTubeVideo } from "~/utils/youtube";
 import TrackCard from "~/components/TrackCard";
 import { usePlayer } from "~/context/PlayerContext";
+import { useApiKey } from "~/context/ApiKeyContext";
 
 export const meta: MetaFunction = () => {
   return [
@@ -21,56 +22,48 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction = async () => {
-  const apiKey = process.env.YOUTUBE_API_KEY;
-  
-  if (!apiKey) {
-    return json({
-      featuredTracks: [],
-      lofiTracks: [],
-      ambientTracks: [],
-      electronicTracks: [],
-      focusTracks: [],
-    });
-  }
-
-  try {
-    const [featuredTracks, lofiTracks, ambientTracks, electronicTracks, focusTracks] = await Promise.all([
-      searchYouTubeVideos('coding music productivity', apiKey, 12),
-      searchYouTubeVideos('lofi hip hop programming', apiKey, 8),
-      searchYouTubeVideos('ambient music focus coding', apiKey, 8),
-      searchYouTubeVideos('electronic music programming', apiKey, 8),
-      searchYouTubeVideos('deep focus music work', apiKey, 8),
-    ]);
-
-    return json({
-      featuredTracks,
-      lofiTracks,
-      ambientTracks,
-      electronicTracks,
-      focusTracks,
-    });
-  } catch (error) {
-    console.error("Error fetching videos:", error);
-    return json({
-      featuredTracks: [],
-      lofiTracks: [],
-      ambientTracks: [],
-      electronicTracks: [],
-      focusTracks: [],
-    });
-  }
+  // Return empty data - we'll fetch on client side with user's API key
+  return json({
+    featuredTracks: [],
+    lofiTracks: [],
+    ambientTracks: [],
+    electronicTracks: [],
+    focusTracks: [],
+  });
 };
 
 export default function Index() {
-  const { 
-    featuredTracks, 
-    lofiTracks, 
-    ambientTracks, 
-    electronicTracks, 
-    focusTracks 
-  } = useLoaderData<LoaderData>();
-  
+  const loaderData = useLoaderData<LoaderData>();
+  const [tracks, setTracks] = useState(loaderData);
+  const [isLoading, setIsLoading] = useState(false);
   const { playTrack, currentTrack, isPlaying } = usePlayer();
+  const { apiKey, hasApiKey, isLoading: apiKeyLoading } = useApiKey();
+
+  // Fetch tracks when API key becomes available
+  useEffect(() => {
+    if (hasApiKey && apiKey && tracks.featuredTracks.length === 0) {
+      setIsLoading(true);
+      Promise.all([
+        searchYouTubeVideos('coding music productivity', apiKey, 12),
+        searchYouTubeVideos('lofi hip hop programming', apiKey, 8),
+        searchYouTubeVideos('ambient music focus coding', apiKey, 8),
+        searchYouTubeVideos('electronic music programming', apiKey, 8),
+        searchYouTubeVideos('deep focus music work', apiKey, 8),
+      ]).then(([featuredTracks, lofiTracks, ambientTracks, electronicTracks, focusTracks]) => {
+        setTracks({
+          featuredTracks,
+          lofiTracks,
+          ambientTracks,
+          electronicTracks,
+          focusTracks,
+        });
+        setIsLoading(false);
+      }).catch((error) => {
+        console.error("Error fetching videos:", error);
+        setIsLoading(false);
+      });
+    }
+  }, [hasApiKey, apiKey]);
 
   const handlePlayTrack = (track: YouTubeVideo, playlist: YouTubeVideo[]) => {
     playTrack(track, playlist);
@@ -82,6 +75,64 @@ export default function Index() {
     if (hour < 18) return "Good afternoon";
     return "Good evening";
   };
+
+  if (apiKeyLoading) {
+    return (
+      <div className="bg-gradient-to-b from-gray-900 to-black min-h-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <h1 className="text-2xl font-bold text-white">Loading Coder Music...</h1>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasApiKey) {
+    return (
+      <div className="bg-gradient-to-b from-gray-900 to-black min-h-full flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-white mb-4">Welcome to Coder Music</h1>
+          <p className="text-gray-400 mb-6">Please set up your YouTube API key to get started</p>
+          <div className="animate-pulse bg-gray-800 rounded-lg p-6 max-w-md mx-auto">
+            <div className="h-4 bg-gray-700 rounded mb-2"></div>
+            <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="bg-gradient-to-b from-gray-900 to-black min-h-full">
+        <div className="px-8 pt-6">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">{getGreeting()}</h1>
+            <p className="text-gray-400">Loading your coding music...</p>
+          </div>
+          
+          <div className="space-y-8">
+            {[1, 2, 3].map((section) => (
+              <div key={section}>
+                <div className="h-6 bg-gray-800 rounded w-48 mb-6"></div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="bg-gray-800 rounded-lg p-4">
+                        <div className="w-full aspect-square bg-gray-700 rounded-md mb-3"></div>
+                        <div className="h-4 bg-gray-700 rounded mb-2"></div>
+                        <div className="h-3 bg-gray-700 rounded w-3/4"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gradient-to-b from-gray-900 to-black min-h-full">
@@ -95,15 +146,15 @@ export default function Index() {
         </div>
 
         {/* Featured Section */}
-        {featuredTracks.length > 0 && (
+        {tracks.featuredTracks.length > 0 && (
           <section className="mb-8">
             <h2 className="text-2xl font-bold text-white mb-6">Featured for Coding</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-              {featuredTracks.slice(0, 6).map((track) => (
+              {tracks.featuredTracks.slice(0, 6).map((track: YouTubeVideo) => (
                 <TrackCard
                   key={track.id}
                   track={track}
-                  onPlay={(t) => handlePlayTrack(t, featuredTracks)}
+                  onPlay={(t) => handlePlayTrack(t, tracks.featuredTracks)}
                   isCurrentTrack={currentTrack?.id === track.id}
                   isPlaying={isPlaying}
                 />
@@ -113,7 +164,7 @@ export default function Index() {
         )}
 
         {/* Lo-Fi Hip Hop */}
-        {lofiTracks.length > 0 && (
+        {tracks.lofiTracks.length > 0 && (
           <section className="mb-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-white">Lo-Fi Hip Hop</h2>
@@ -122,11 +173,11 @@ export default function Index() {
               </button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-              {lofiTracks.map((track) => (
+              {tracks.lofiTracks.map((track: YouTubeVideo) => (
                 <TrackCard
                   key={track.id}
                   track={track}
-                  onPlay={(t) => handlePlayTrack(t, lofiTracks)}
+                  onPlay={(t) => handlePlayTrack(t, tracks.lofiTracks)}
                   isCurrentTrack={currentTrack?.id === track.id}
                   isPlaying={isPlaying}
                 />
@@ -136,7 +187,7 @@ export default function Index() {
         )}
 
         {/* Ambient & Focus */}
-        {ambientTracks.length > 0 && (
+        {tracks.ambientTracks.length > 0 && (
           <section className="mb-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-white">Ambient & Focus</h2>
@@ -145,11 +196,11 @@ export default function Index() {
               </button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-              {ambientTracks.map((track) => (
+              {tracks.ambientTracks.map((track: YouTubeVideo) => (
                 <TrackCard
                   key={track.id}
                   track={track}
-                  onPlay={(t) => handlePlayTrack(t, ambientTracks)}
+                  onPlay={(t) => handlePlayTrack(t, tracks.ambientTracks)}
                   isCurrentTrack={currentTrack?.id === track.id}
                   isPlaying={isPlaying}
                 />
@@ -159,7 +210,7 @@ export default function Index() {
         )}
 
         {/* Electronic */}
-        {electronicTracks.length > 0 && (
+        {tracks.electronicTracks.length > 0 && (
           <section className="mb-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-white">Electronic</h2>
@@ -168,11 +219,11 @@ export default function Index() {
               </button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-              {electronicTracks.map((track) => (
+              {tracks.electronicTracks.map((track: YouTubeVideo) => (
                 <TrackCard
                   key={track.id}
                   track={track}
-                  onPlay={(t) => handlePlayTrack(t, electronicTracks)}
+                  onPlay={(t) => handlePlayTrack(t, tracks.electronicTracks)}
                   isCurrentTrack={currentTrack?.id === track.id}
                   isPlaying={isPlaying}
                 />
@@ -182,7 +233,7 @@ export default function Index() {
         )}
 
         {/* Deep Focus */}
-        {focusTracks.length > 0 && (
+        {tracks.focusTracks.length > 0 && (
           <section className="mb-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-white">Deep Focus</h2>
@@ -191,11 +242,11 @@ export default function Index() {
               </button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-              {focusTracks.map((track) => (
+              {tracks.focusTracks.map((track: YouTubeVideo) => (
                 <TrackCard
                   key={track.id}
                   track={track}
-                  onPlay={(t) => handlePlayTrack(t, focusTracks)}
+                  onPlay={(t) => handlePlayTrack(t, tracks.focusTracks)}
                   isCurrentTrack={currentTrack?.id === track.id}
                   isPlaying={isPlaying}
                 />

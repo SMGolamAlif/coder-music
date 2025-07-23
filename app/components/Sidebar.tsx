@@ -6,6 +6,7 @@ import {
   HeartIcon,
   PlusIcon
 } from "@heroicons/react/24/outline";
+import ProfileDropdown from "./ProfileDropdown";
 
 export default function Sidebar() {
   const navigation = [
@@ -24,11 +25,12 @@ export default function Sidebar() {
 
   return (
     <div className="w-64 bg-black h-full flex flex-col">
-      {/* Logo */}
-      <div className="p-6">
+      {/* Logo and Profile */}
+      <div className="p-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
           Coder Music
         </h1>
+        <ProfileDropdown />
       </div>
 
       {/* Main Navigation */}

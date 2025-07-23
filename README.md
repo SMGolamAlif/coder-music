@@ -5,9 +5,9 @@ A modern, sleek music player designed specifically for developers and coders. En
 ![Coder Music](https://img.shields.io/badge/Built%20with-Remix-blue?style=flat&logo=remix)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)
-![YouTube API](https://img.shields.io/badge/YouTube-FF0000?style=flat&logo=youtube&logoColor=white)
+![YouTube API](https://img.shields.io/badge/YouTube-FF0000?style=flat&logo=youtube&logoColor=white) 
 
-## ✨ Features
+## ✨ Features 
 
 ### 🎧 **Music Player**
 - **Interactive Timeline**: Click or drag to seek through tracks
@@ -16,12 +16,17 @@ A modern, sleek music player designed specifically for developers and coders. En
 - **Volume Control**: Adjustable volume with mute functionality
 - **Play/Pause Controls**: Responsive player controls with visual feedback
 
-### 🔍 **Smart Search**
+### � **Personal API Key Management**
+- **No Server Dependencies**: Uses your personal YouTube API key for unlimited access
+- **Secure Local Storage**: API keys are stored securely in your browser
+- **Easy Setup**: Interactive popup guides you through getting your own API key
+- **Changeable Keys**: Switch API keys anytime through the profile menu
+- **Video Tutorial**: Step-by-step instructions with embedded video guide
+
+### � **Smart Search**
 - **YouTube Integration**: Search and play music directly from YouTube
 - **Popular Suggestions**: Quick access to coding-focused music categories
 - **Real-time Results**: Instant search results with thumbnails and details
-
-### 📚 **Curated Content**
 - **Coding Playlists**: Pre-curated playlists for different coding moods
   - Lo-Fi Hip Hop for focused coding
   - Ambient music for deep concentration
@@ -40,7 +45,7 @@ A modern, sleek music player designed specifically for developers and coders. En
 ### Prerequisites
 - Node.js 20.0.0 or higher
 - npm or yarn package manager
-- YouTube Data API v3 key
+- YouTube Data API v3 key (free - guided setup included)
 
 ### Installation
 
@@ -55,18 +60,14 @@ A modern, sleek music player designed specifically for developers and coders. En
    npm install
    ```
 
-3. **Set up environment variables**
-   Create a `.env` file in the root directory:
-   ```env
-   YOUTUBE_API_KEY=your_youtube_api_key_here
-   ```
+3. **Set up your YouTube API key**
+   When you first open the app, you'll see a setup modal that guides you through:
+   - Getting a free YouTube Data API v3 key
+   - Video tutorial showing the exact steps
+   - Direct links to Google Cloud Console
+   - Secure local storage of your key
 
-   To get a YouTube API key:
-   - Go to the [Google Cloud Console](https://console.cloud.google.com/)
-   - Create a new project or select existing one
-   - Enable the YouTube Data API v3
-   - Create credentials (API Key)
-   - Copy the API key to your `.env` file
+   No need to create `.env` files - everything is handled through the UI!
 
 4. **Start the development server**
    ```bash
@@ -75,6 +76,9 @@ A modern, sleek music player designed specifically for developers and coders. En
 
 5. **Open your browser**
    Navigate to `http://localhost:5173` (or the port shown in terminal)
+
+6. **Set up your API key**
+   Follow the guided setup to add your YouTube API key - it's quick and easy!
 
 ## 🛠️ Development
 
@@ -95,9 +99,12 @@ coder-music/
 │   │   ├── Player.tsx      # Main music player component
 │   │   ├── Sidebar.tsx     # Navigation sidebar
 │   │   ├── TrackCard.tsx   # Individual track display
+│   │   ├── ApiKeyModal.tsx # API key setup modal
+│   │   ├── ProfileDropdown.tsx # Profile and settings menu
 │   │   └── ...
 │   ├── context/            # React context providers
-│   │   └── PlayerContext.tsx # Music player state management
+│   │   ├── PlayerContext.tsx # Music player state management
+│   │   └── ApiKeyContext.tsx # API key management
 │   ├── routes/             # Remix route components
 │   │   ├── _index.tsx      # Home page with featured content
 │   │   ├── search.tsx      # Search functionality
@@ -170,7 +177,7 @@ This creates optimized bundles in the `build/` directory.
    - Set start command: `npm start`
    - Add environment variables
 
-Remember to set your `YOUTUBE_API_KEY` environment variable in your deployment platform.
+Remember to set your YouTube API key through the app's interface - no need for environment variables in production.
 
 ## 🤝 Contributing
 
