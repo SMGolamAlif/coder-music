@@ -19,6 +19,7 @@ type PlayerContextType = {
   togglePlayPause: () => void;
   nextTrack: () => void;
   previousTrack: () => void;
+  onTrackEnd: () => void;
 };
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
@@ -68,6 +69,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const onTrackEnd = () => {
+    // Automatically play next track when current track ends
+    if (playlist.length > 0 && currentIndex < playlist.length - 1) {
+      nextTrack();
+    } else {
+      // If it's the last track, stop playing
+      setIsPlaying(false);
+    }
+  };
+
   return (
     <PlayerContext.Provider
       value={{
@@ -81,6 +92,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         togglePlayPause,
         nextTrack,
         previousTrack,
+        onTrackEnd,
       }}
     >
       {children}

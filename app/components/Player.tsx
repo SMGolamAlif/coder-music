@@ -9,6 +9,8 @@ import {
   SpeakerXMarkIcon 
 } from "@heroicons/react/24/solid";
 
+import { usePlayer } from "~/context/PlayerContext";
+
 type Track = {
   id: string;
   title: string;
@@ -37,11 +39,17 @@ export default function Player({
   const [isMuted, setIsMuted] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const playerRef = useRef<any>(null);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { onTrackEnd } = usePlayer();
 
   const onReady = (event: any) => {
     playerRef.current = event.target;
     setDuration(event.target.getDuration());
+    setIsLoading(false);
     if (isPlaying) {
       event.target.playVideo();
     } else {
@@ -51,12 +59,28 @@ export default function Player({
 
   const onStateChange = (event: any) => {
     if (event.data === 1) { // playing
-      const interval = setInterval(() => {
-        if (playerRef.current) {
+      setIsLoading(false);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      intervalRef.current = setInterval(() => {
+        if (playerRef.current && !isDragging) {
           setCurrentTime(playerRef.current.getCurrentTime());
         }
       }, 1000);
-      return () => clearInterval(interval);
+    } else if (event.data === 2) { // paused
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    } else if (event.data === 3) { // buffering
+      setIsLoading(true);
+    } else if (event.data === 0) { // ended
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      onTrackEnd();
     }
   };
 
@@ -73,6 +97,15 @@ export default function Player({
 
   // Handle when currentTrack changes
   useEffect(() => {
+    if (currentTrack) {
+      setIsLoading(true);
+      setCurrentTime(0);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+    
     if (playerRef.current && currentTrack && isPlaying) {
       // Small delay to ensure the new video is loaded
       setTimeout(() => {
@@ -82,6 +115,15 @@ export default function Player({
       }, 500);
     }
   }, [currentTrack]);
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -105,6 +147,43 @@ export default function Player({
       } else {
         playerRef.current.setVolume(0);
       }
+    }
+  };
+
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (progressBarRef.current && playerRef.current && duration > 0) {
+      const rect = progressBarRef.current.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const percentage = clickX / rect.width;
+      const newTime = percentage * duration;
+      
+      playerRef.current.seekTo(newTime);
+      setCurrentTime(newTime);
+    }
+  };
+
+  const handleProgressMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsDragging(true);
+    handleProgressClick(e);
+  };
+
+  const handleProgressMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isDragging) {
+      handleProgressClick(e);
+    }
+  };
+
+  const handleProgressMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Handle play/pause loading state
+  const handlePlayPause = () => {
+    if (currentTrack) {
+      if (!isPlaying) {
+        setIsLoading(true);
+      }
+      onPlayPause();
     }
   };
 
@@ -162,10 +241,13 @@ export default function Player({
             </button>
             
             <button
-              onClick={onPlayPause}
-              className="bg-white text-black rounded-full p-2 hover:scale-105 transition-transform"
+              onClick={handlePlayPause}
+              className="bg-white text-black rounded-full p-2 hover:scale-105 transition-transform relative"
+              disabled={!currentTrack}
             >
-              {isPlaying ? (
+              {isLoading ? (
+                <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+              ) : isPlaying ? (
                 <PauseIcon className="w-5 h-5" />
               ) : (
                 <PlayIcon className="w-5 h-5" />
@@ -185,11 +267,21 @@ export default function Player({
             <span className="text-xs text-gray-400 w-10">
               {formatTime(currentTime)}
             </span>
-            <div className="flex-1 bg-gray-600 rounded-full h-1">
+            <div 
+              ref={progressBarRef}
+              className="flex-1 bg-gray-600 rounded-full h-1 cursor-pointer group"
+              onClick={handleProgressClick}
+              onMouseDown={handleProgressMouseDown}
+              onMouseMove={handleProgressMouseMove}
+              onMouseUp={handleProgressMouseUp}
+              onMouseLeave={handleProgressMouseUp}
+            >
               <div
-                className="bg-white h-1 rounded-full transition-all"
-                style={{ width: `${(currentTime / duration) * 100}%` }}
-              />
+                className="bg-white h-1 rounded-full transition-all group-hover:bg-green-400 relative"
+                style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+              >
+                <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
             </div>
             <span className="text-xs text-gray-400 w-10">
               {formatTime(duration)}

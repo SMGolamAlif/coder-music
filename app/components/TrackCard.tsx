@@ -33,7 +33,7 @@ export default function TrackCard({
         {/* Play Button Overlay */}
         <button
           onClick={() => onPlay(track)}
-          className={`absolute bottom-2 right-2 bg-green-500 rounded-full p-3 shadow-lg transition-all duration-200 ${
+          className={`absolute bottom-2 right-2 bg-green-500 hover:bg-green-400 rounded-full p-3 shadow-lg transition-all duration-200 ${
             isCurrentTrack && isPlaying
               ? "opacity-100 translate-y-0"
               : "opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0"
