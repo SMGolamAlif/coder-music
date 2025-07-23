@@ -23,7 +23,7 @@ type PlayerProps = {
   onPlayPause: () => void;
   onNext: () => void;
   onPrevious: () => void;
-  playlist: Track[];
+  playlist: Track[]; 
 };
 
 export default function Player({ 
