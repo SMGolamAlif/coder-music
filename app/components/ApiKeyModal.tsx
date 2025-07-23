@@ -34,9 +34,10 @@ export default function ApiKeyModal() {
   };
 
   const handleClose = () => {
-    if (apiKeyInput.trim()) {
-      setShowApiKeyModal(false);
-    }
+    setShowApiKeyModal(false);
+    setApiKeyInput("");
+    setError("");
+    setCurrentView('setup');
   };
 
   const renderSetupView = () => (
@@ -215,7 +216,14 @@ export default function ApiKeyModal() {
   if (!isMounted || !showApiKeyModal) return null;
 
   const modalContent = (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          handleClose();
+        }
+      }}
+    >
       <div className="bg-gray-900 border border-gray-700 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
@@ -224,15 +232,13 @@ export default function ApiKeyModal() {
               <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
               <div className="w-3 h-3 bg-green-500 rounded-full"></div>
             </div>
-            {currentView === 'setup' && (
-              <button
-                onClick={handleClose}
-                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                disabled={!apiKeyInput.trim()}
-              >
-                <XMarkIcon className="w-5 h-5 text-gray-400" />
-              </button>
-            )}
+            <button
+              onClick={handleClose}
+              className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+              title="Close modal"
+            >
+              <XMarkIcon className="w-5 h-5 text-gray-400" />
+            </button>
           </div>
 
           {currentView === 'setup' ? renderSetupView() : renderInstructionsView()}
